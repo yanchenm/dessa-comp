@@ -24,6 +24,12 @@ def scrape_project(json_data):
     final_data['backers'] = json_data['backers_count']
     final_data['location'] = json_data['location']['displayable_name']
 
+    final_data['launch_date'] = datetime.utcfromtimestamp(
+        int(json_data['launched_at'])).strftime('%Y-%m-%d %H:%M:%S')
+
+    final_data['deadline'] = datetime.utcfromtimestamp(
+        int(json_data['deadline'])).strftime('%Y-%m-%d %H:%M:%S')
+
     final_data['finances'] = {}
     final_data['finances']['goal'] = json_data['goal']
     final_data['finances']['pledged'] = json_data['pledged']
