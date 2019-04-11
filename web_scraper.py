@@ -126,16 +126,17 @@ def scrape_project(json_data):
 
 if __name__ == '__main__':
 
-    projects_html = []
     projects = {}
 
     if not os.path.isdir('./data'):
         os.mkdir('./data')
 
     else:
-        for i in range(1, 2):
+        for i in range(1, 201):
 
             print('Scraping page {}...'.format(i))
+
+            projects_html = []
 
             page = requests.get('{}&page={}'.format(base_url, i))
             soup = BeautifulSoup(page.content, 'html.parser')
