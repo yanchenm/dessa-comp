@@ -30,7 +30,7 @@ def scrape_project(json_data):
     final_data['finances']['currency'] = json_data['currency']
     final_data['finances']['percent_funded'] = json_data['percent_funded']
 
-    # Scrape description, rewards tiers, etc. from individual project page
+    # Scrape description from individual project page
     print('Scraping {}...'.format(json_data['name']))
     project_url = json_data['urls']['web']['project']
 
@@ -40,7 +40,10 @@ def scrape_project(json_data):
     description_container = soup.find(
         'div', {'class': 'description-container'})
 
-    description_content = description_container.find_all(text=True)
+    # Format description text in readable string form
+    description_content = description_container.find_all('p', text=True)
+    description_content = [p.text for p in description_content]
+
     description_content = list(
         filter(lambda x: (x != '\n') and (x != '\xa0') and (x != ' '), description_content))[1:]
 
@@ -54,6 +57,7 @@ def scrape_project(json_data):
 
     final_data['description'] = description_string
 
+    # Scrape reward tiers information from project page
     tiers = {}
 
     rewards_container = soup.find('div', {'class': 'js-project-rewards'})
@@ -66,30 +70,50 @@ def scrape_project(json_data):
 
         reward_data = {}
 
+        # Scrape tier amount and currency
         reward_amount_string = reward.find('span', {'class': 'money'}).text
-        reward_match = re.match(r'(.+)(\d+)', reward_amount_string)
+        reward_match = re.match(r'(\D+)(\d+[,.]?\d*)', reward_amount_string)
 
-        reward_data['amount'] = int(reward_match.group(2))
+        reward_data['amount'] = int(reward_match.group(2).replace(',', ''))
         reward_data['currency'] = reward_match.group(1).strip()
 
+        # Scrape reward title
         try:
             reward_data['title'] = reward.find(
-                'h3', {'class': 'pledge__title'}).text
+                'h3', {'class': 'pledge__title'}).text.strip('\n')
         except (AttributeError):
             reward_data['title'] = None
 
+        # Scrape reward description and convert to readable form
         try:
-            reward_data['description'] = reward.find(
-                'div', {'class': 'pledge__reward-description'}).find('p').text
+            reward_description = reward.find(
+                'div', {'class': 'pledge__reward-description'}).find_all('p', text=True)
+
+            reward_description = [p.text for p in reward_description]
+
+            reward_description = list(
+                filter(lambda x: (x != '\n') and (x != '\xa0') and (x != ' '), reward_description))[1:]
+
+            reward_description_string = ''
+
+            for string in reward_description:
+                string = string.strip()
+                string = re.sub(r'\xa0', '', string)
+
+                reward_description_string = reward_description_string + ' ' + string
+
+            reward_data['description'] = reward_description_string
+
         except (AttributeError):
             reward_data['description'] = None
 
+        # Scrape number of backers for each tier
         try:
             reward_backer_string = reward.find(
                 'span', {'class': 'pledge__backer-count'}).text.strip()
 
             reward_data['backers'] = int(
-                re.match(r'(\S+) \S+', reward_backer_string).group(1).replace(',', ''))
+                re.match(r'(\S+) \D+', reward_backer_string).group(1).replace(',', ''))
         except (AttributeError):
             reward_data['backers'] = None
 
