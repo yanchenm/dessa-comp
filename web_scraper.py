@@ -12,8 +12,7 @@ from bs4 import BeautifulSoup
 base_url = 'https://www.kickstarter.com/discover/advanced?category_id=12&woe_id=0&sort=most_funded&seed=2591527'
 
 
-def scrape_project(project_data):
-    json_data = json.loads(project_data)
+def scrape_project(json_data):
     final_data = {}
 
     # Copy base json project data
@@ -43,7 +42,51 @@ def scrape_project(project_data):
 
     description_content = description_container.find_all(text=True)
     description_content = list(
-        filter(lambda x: x != '\n', description_content))
+        filter(lambda x: (x != '\n') and (x != '\xa0') and (x != ' '), description_content))[1:]
+
+    description_string = ''
+
+    for string in description_content:
+        string = string.strip()
+        string = re.sub(r'\xa0', '', string)
+
+        description_string = description_string + ' ' + string
+
+    final_data['description'] = description_string
+
+    tiers = {}
+
+    rewards_container = soup.find('div', {'class': 'js-project-rewards'})
+    rewards_list = rewards_container.find_all(
+        'li', {'class': 'pledge-selectable-sidebar'})
+
+    for reward in rewards_list:
+        if (reward['data-reward-id'] == 0):
+            continue
+
+        reward_data = {}
+
+        reward_amount_string = reward.find('span', {'class': 'money'}).text
+        reward_match = re.match(r'(\S+) (\d+)', reward_amount_string)
+
+        reward_data['amount'] = int(reward_match.group(2))
+        reward_data['currency'] = reward_match.group(1)
+
+        reward_data['title'] = reward.find(
+            'h3', {'class': 'pledge__title'}).text
+
+        reward_data['description'] = reward.find(
+            'div', {'class': 'pledge__reward-description'}).find('p').text
+
+        reward_backer_string = reward.find(
+            'span', {'class': 'pledge__backer-count'}).text
+
+        reward_data['backers'] = int(
+            re.match(r'(\S+) \S+', reward_backer_string).group(1).replace(',', ''))
+
+        tiers[reward['data-reward-id']] = reward_data
+
+    final_data['rewards'] = tiers
 
     return final_data
 
@@ -51,14 +94,10 @@ def scrape_project(project_data):
 if __name__ == '__main__':
 
     projects_html = []
-    projects = []
+    projects = {}
 
     if not os.path.isdir('./data'):
         os.mkdir('./data')
-
-    # if os.path.isfile('./data/temp_project_list'):
-    #     with open('./data/temp_project_list', 'r') as file:
-    #         projects = [line.rstrip('\n') for line in file]
 
     else:
         for i in range(1, 2):
@@ -77,8 +116,8 @@ if __name__ == '__main__':
                     'div', {'class': 'js-react-proj-card'}))
 
             for project in projects_html:
-                projects.append(scrape_project(project))
+                json_data = json.loads(project['data-project'])
+                projects[json_data['id']] = scrape_project(json_data)
 
-        # with open('./data/temp_project_list', 'w') as file:
-        #     for item in projects:
-        #         file.write('%s\n' % item)
+    with open('projects.json', 'w') as file:
+        json.dump(projects, file)
