@@ -128,5 +128,5 @@ if __name__ == '__main__':
                 json_data = json.loads(project['data-project'])
                 projects[json_data['id']] = scrape_project(json_data)
 
-    with open('projects.json', 'w') as file:
+    with open('./data/projects.json', 'w') as file:
         json.dump(projects, file)
