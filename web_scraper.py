@@ -19,7 +19,7 @@ def scrape_project(json_data):
     final_data['id'] = json_data['id']
     final_data['name'] = json_data['name']
     final_data['blurb'] = json_data['blurb']
-    final_data['link'] = json_data['urls']['project']
+    final_data['link'] = json_data['urls']['web']['project']
     final_data['status'] = json_data['state']
     final_data['backers'] = json_data['backers_count']
     final_data['location'] = json_data['location']['displayable_name']
@@ -32,7 +32,7 @@ def scrape_project(json_data):
 
     # Scrape description, rewards tiers, etc. from individual project page
     print('Scraping {}...'.format(json_data['name']))
-    project_url = json_data['urls']['project']
+    project_url = json_data['urls']['web']['project']
 
     page = requests.get(project_url)
     soup = BeautifulSoup(page.content, 'html.parser')
@@ -67,22 +67,31 @@ def scrape_project(json_data):
         reward_data = {}
 
         reward_amount_string = reward.find('span', {'class': 'money'}).text
-        reward_match = re.match(r'(\S+) (\d+)', reward_amount_string)
+        reward_match = re.match(r'(.+)(\d+)', reward_amount_string)
 
         reward_data['amount'] = int(reward_match.group(2))
-        reward_data['currency'] = reward_match.group(1)
+        reward_data['currency'] = reward_match.group(1).strip()
 
-        reward_data['title'] = reward.find(
-            'h3', {'class': 'pledge__title'}).text
+        try:
+            reward_data['title'] = reward.find(
+                'h3', {'class': 'pledge__title'}).text
+        except (AttributeError):
+            reward_data['title'] = None
 
-        reward_data['description'] = reward.find(
-            'div', {'class': 'pledge__reward-description'}).find('p').text
+        try:
+            reward_data['description'] = reward.find(
+                'div', {'class': 'pledge__reward-description'}).find('p').text
+        except (AttributeError):
+            reward_data['description'] = None
 
-        reward_backer_string = reward.find(
-            'span', {'class': 'pledge__backer-count'}).text
+        try:
+            reward_backer_string = reward.find(
+                'span', {'class': 'pledge__backer-count'}).text.strip()
 
-        reward_data['backers'] = int(
-            re.match(r'(\S+) \S+', reward_backer_string).group(1).replace(',', ''))
+            reward_data['backers'] = int(
+                re.match(r'(\S+) \S+', reward_backer_string).group(1).replace(',', ''))
+        except (AttributeError):
+            reward_data['backers'] = None
 
         tiers[reward['data-reward-id']] = reward_data
 
