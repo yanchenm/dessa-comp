@@ -7,7 +7,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 
-base_url = 'https://www.kickstarter.com/discover/advanced?category_id=12&woe_id=0&sort=most_funded&seed=2591527'
+# base_url = 'https://www.kickstarter.com/discover/advanced?category_id=12&woe_id=0&sort=most_funded&seed=2591527'
+# base_url = 'https://www.kickstarter.com/discover/advanced?category_id=332&sort=most_funded&seed=2591762'
 
 
 def scrape_project(json_data):
@@ -129,7 +130,7 @@ def scrape_project(json_data):
     return final_data
 
 
-if __name__ == '__main__':
+def scrape(base_url, output):
 
     projects = {}
 
@@ -158,5 +159,5 @@ if __name__ == '__main__':
                 json_data = json.loads(project['data-project'])
                 projects[json_data['id']] = scrape_project(json_data)
 
-    with open('./data/granular_projects.json', 'w') as file:
+    with open(output, 'w') as file:
         json.dump(projects, file, indent=4)
