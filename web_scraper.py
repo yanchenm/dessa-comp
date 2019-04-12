@@ -4,7 +4,6 @@ import json
 import requests
 import pymongo
 
-
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -71,7 +70,7 @@ def scrape_project(json_data):
         'li', {'class': 'pledge-selectable-sidebar'})
 
     for reward in rewards_list:
-        if (reward['data-reward-id'] == 0):
+        if (int(reward['data-reward-id'].strip()) == 0):
             continue
 
         reward_data = {}
@@ -160,4 +159,4 @@ if __name__ == '__main__':
                 projects[json_data['id']] = scrape_project(json_data)
 
     with open('./data/projects.json', 'w') as file:
-        json.dump(projects, file)
+        json.dump(projects, file, indent=4)
