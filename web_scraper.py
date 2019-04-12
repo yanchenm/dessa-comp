@@ -22,7 +22,11 @@ def scrape_project(json_data):
     final_data['link'] = json_data['urls']['web']['project']
     final_data['status'] = json_data['state']
     final_data['backers'] = json_data['backers_count']
-    final_data['location'] = json_data['location']['displayable_name']
+
+    try:
+        final_data['location'] = json_data['location']['displayable_name']
+    except:
+        final_data['location'] = None
 
     final_data['launch_date'] = datetime.utcfromtimestamp(
         int(json_data['launched_at'])).strftime('%Y-%m-%d %H:%M:%S')
