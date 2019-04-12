@@ -2,7 +2,6 @@ import re
 import os
 import json
 import requests
-import pymongo
 
 from datetime import datetime
 from bs4 import BeautifulSoup
@@ -18,6 +17,7 @@ def scrape_project(json_data):
     final_data['id'] = json_data['id']
     final_data['name'] = json_data['name']
     final_data['blurb'] = json_data['blurb']
+    final_data['specific-category'] = json_data['category']['name']
     final_data['link'] = json_data['urls']['web']['project']
     final_data['status'] = json_data['state']
     final_data['backers'] = json_data['backers_count']
@@ -158,5 +158,5 @@ if __name__ == '__main__':
                 json_data = json.loads(project['data-project'])
                 projects[json_data['id']] = scrape_project(json_data)
 
-    with open('./data/projects.json', 'w') as file:
+    with open('./data/granular_projects.json', 'w') as file:
         json.dump(projects, file, indent=4)
